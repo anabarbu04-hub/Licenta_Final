@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<title>Experiment - Memorie Prospectivă</title>
+
+<!-- jsPsych v7 din CDN (compatibil cu plugin-ul Pavlovia) -->
+<script src="https://unpkg.com/jspsych@7.3.4"></script>
+<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+<script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.3"></script>
+<script src="https://unpkg.com/@jspsych/plugin-instructions@1.1.4"></script>
+<script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.3"></script>
+<script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.3"></script>
+<script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script>
+<script src="https://unpkg.com/@jspsych/plugin-call-function@1.1.3"></script>
+<script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+
+<!-- Plugin DataPipe pentru salvare date pe OSF (gratuit, made by jsPsych team) -->
+<script src="https://unpkg.com/@jspsych-contrib/plugin-pipe@0.4"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css">
+
+<style>
+  html, body {
+    background-color: white;
+    color: black;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  /* Centrare verticală pentru tot conținutul jsPsych */
+  .jspsych-display-element {
+    background-color: white;
+    color: black;
+    font-family: Arial, sans-serif;
+    font-size: 22px;
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .jspsych-content-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+  }
+  .jspsych-content {
+    max-width: 900px;
+    color: black;
+    margin: auto;
+  }
+  /* Cuvântul stimul mare în centru */
+  .stim-cuvant {
+    font-size: 64px;
+    color: black;
+    font-weight: normal;
+    text-align: center;
+    padding: 100px 0;
+  }
+  /* Fixație */
+  .fixatie {
+    font-size: 50px;
+    color: gray;
+    text-align: center;
+  }
+  /* Instrucțiuni */
+  .instructiuni {
+    font-size: 22px;
+    color: black;
+    text-align: center;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    max-width: 850px;
+    margin: 0 auto;
+  }
+  /* Consimțământ */
+  .consimtamant {
+    font-size: 18px;
+    color: black;
+    text-align: left;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Courier New', monospace;
+  }
+  /* Feedback antrenament */
+  .feedback-incorect {
+    font-size: 40px;
+    color: red;
+    text-align: center;
+    font-weight: bold;
+  }
+  .feedback-corect {
+    font-size: 40px;
+    color: #2e7d32;
+    text-align: center;
+    font-weight: bold;
+  }
+  /* Bară de timp — comună ambelor condiții, culoare diferită */
+  .timer-bar-wrap {
+    width: 400px;
+    height: 10px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    margin: 20px auto 0 auto;
+    overflow: hidden;
+  }
+  .timer-bar-fill {
+    height: 10px;
+    border-radius: 5px;
+    animation-name: shrink;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+  }
+  .timer-bar-fill.high-load { background: #e53935; }  /* roșu — presiune */
+  .timer-bar-fill.low-load  { background: #66bb6a; }  /* verde — relaxat */
+  @keyframes shrink {
+    from { width: 100%; }
+    to   { width: 0%; }
+  }
+</style>
+</head>
+
+<body style="background-color:#fffbf0;">
+
+
+
+
+<script>
+"use strict";
+
+/* ============================================================================
+   STIMULI - identici cu varianta Python
+   ============================================================================ */
+
+const VIU_NON_ANIMALE = [
+  // Arbori (inconfundabil vii)
+  'copac', 'stejar', 'mesteacăn', 'brad', 'salcie', 'tei', 'plop', 'paltin',
+  'molid', 'fag', 'pin', 'cedru', 'nuc', 'cireș',
+  // Flori (inconfundabil vii)
+  'floare', 'trandafir', 'lalea', 'margaretă', 'crin', 'bujor', 'narcisă',
+  'orhidee', 'lavandă', 'mușețel', 'mac', 'păpădie',
+  'zambilă', 'viorea', 'garoafă', 'begonie',
+  // Plante de cameră și grădină (inconfundabil vii)
+  'nufăr', 'ferigă', 'iederă', 'mentă', 'busuioc',
+  'bambus', 'palmier', 'cactus', 'ficuș',
+  // Oameni (termeni generici, fără profesii)
+  'om', 'copil', 'femeie', 'bărbat', 'bunic', 'mamă', 'tată',
+  'elev', 'student', 'tânăr', 'bătrân', 'adolescent', 'bebeluș', 'prieten'
+];
+
+const NEVIU = [
+  // Mobilier și obiecte casnice
+  'masă', 'scaun', 'fereastră', 'ușă', 'perete', 'tavan', 'podea',
+  'lampă', 'ceas', 'oglindă', 'tablou', 'canapea', 'dulap', 'sertar',
+  // Papetărie
+  'carte', 'creion', 'stilou', 'caiet', 'foaie', 'plic', 'agendă',
+  // Electronică
+  'telefon', 'calculator', 'tastatură', 'ecran', 'mouse', 'imprimantă',
+  // Mijloace de transport
+  'mașină', 'bicicletă', 'autobuz', 'tren', 'avion', 'barcă', 'motocicletă',
+  // Îmbrăcăminte și accesorii
+  'palton', 'cămașă', 'pantalon', 'rochie', 'pălărie', 'cravată', 'geantă',
+  'cizme', 'pantofi', 'umbrelă', 'mănuși', 'eșarfă',
+  // Veselă și unelte
+  'oală', 'farfurie', 'cană', 'furculiță', 'cuțit', 'lingură', 'pahar',
+  'ciocan', 'ferăstrău', 'cheie', 'șurubelniță', 'lopată',
+  // Clădiri și structuri
+  'stradă', 'școală', 'spital', 'magazin', 'bibliotecă', 'teatru',
+  'casă', 'pod', 'tunel', 'turn', 'gard',
+  // Elemente de natură nevie (inconfundabil)
+  'munte', 'stâncă', 'piatră', 'nisip', 'gheață', 'zăpadă', 'cristal',
+  'sticlă', 'metal', 'aur', 'fier', 'beton', 'cărămidă'
+];
+
+// Indicii PM - ANIMALE (folosiți în condiția FOCAL)
+const PM_CUES_ANIMALE = [
+  'urs', 'vulpe', 'delfin', 'tigru', 'elefant',
+  'papagal', 'broască', 'șarpe', 'câine', 'pisică',
+  'lup', 'maimuță', 'girafă', 'pinguin', 'acvilă'
+];
+
+// Indicii PM - cuvinte care încep cu M (folosiți în condiția NON-FOCAL)
+const PM_CUES_M = [
+  'microscop', 'monument', 'marmură',
+  'mandolină', 'medalion', 'macaroane',
+  'mătase', 'macara', 'magnetofon',
+  'magnolia', 'molid', 'mușcată',
+  'măceș', 'mazăre', 'mango'
+];
+
+// Categoria fiecărui indice PM cu M (pentru ongoing task V/N)
+const PM_CUES_M_CATEGORIE = {
+  'microscop': 'neviu', 'monument': 'neviu', 'marmură': 'neviu',
+  'mandolină': 'neviu', 'medalion': 'neviu', 'macaroane': 'neviu',
+  'mătase': 'neviu', 'macara': 'neviu', 'magnetofon': 'neviu',
+  'magnolia': 'viu', 'molid': 'viu', 'mușcată': 'viu',
+  'măceș': 'viu', 'mazăre': 'viu', 'mango': 'viu'
+};
+
+
+
+
+/* ============================================================================
+   UTILITARE - RANDOMIZARE
+   ============================================================================ */
+
+function shuffle(array) {
+  // Fisher-Yates shuffle, modifică array-ul in-place
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function randInt(min, max) {
+  // întreg între min și max inclusiv
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randChoice(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/* ============================================================================
+   ASIGNARE GRUP (random echilibrat cu URL override)
+   ============================================================================ */
+
+// Verifică dacă există ?cond=N în URL pentru a forța o condiție anume
+function determinaConditie() {
+  const params = new URLSearchParams(window.location.search);
+  const condParam = params.get('cond');
+  if (condParam && ['1', '2', '3', '4'].includes(condParam)) {
+    return parseInt(condParam);
+  }
+  // Random pur (1-4)
+  return randInt(1, 4);
+}
+
+const CONDITII_DICT = {
+  1: { str: '1-focal-highload',    focal: true,  high_load: true  },
+  2: { str: '2-focal-lowload',     focal: true,  high_load: false },
+  3: { str: '3-nonfocal-highload', focal: false, high_load: true  },
+  4: { str: '4-nonfocal-lowload',  focal: false, high_load: false }
+};
+
+const CONDITIE_NR = determinaConditie();
+const CONDITIE_INFO = CONDITII_DICT[CONDITIE_NR];
+const CONDITIE_STR = CONDITIE_INFO.str;
+const FOCAL_CUE = CONDITIE_INFO.focal;
+const HIGH_LOAD = CONDITIE_INFO.high_load;
+
+// Deadline în ms pentru fiecare condiție.
+// High-load: presiune temporală reală (~1,3s)
+// Low-load:  limită generoasă (~2,5s) — structura e identică, doar ritmul diferă
+// Ajustează DEADLINE_MS după pilot dacă omisiunile în high-load sunt > 35% sau < 10%.
+const DEADLINE_MS   = 1300;   // high-load
+const LOWLOAD_MS    = 2500;   // low-load
+const TRIAL_DURATION = HIGH_LOAD ? DEADLINE_MS : LOWLOAD_MS;
+
+// Detectează dacă rulăm local (testare) sau online (publicat)
+const ESTE_TEST_LOCAL = window.location.protocol === 'file:'
+                     || window.location.hostname === 'localhost'
+                     || window.location.hostname === '127.0.0.1'
+                     || window.location.hostname === '';
+
+// =============================================================================
+// CONFIGURARE DATAPIPE - completează cu ID-ul tău după ce creezi experimentul
+// pe https://pipe.jspsych.org
+// =============================================================================
+const DATAPIPE_EXPERIMENT_ID = 'lmqvYJunYwcY';  
+
+// Salvarea pe DataPipe e activă DOAR dacă:
+//   - nu rulăm local (testare)
+//   - ID-ul DataPipe a fost setat (nu mai e XXXXXXXXXXXX)
+//   - pluginul jsPsychPipe e disponibil
+const DATAPIPE_DISPONIBIL = (typeof jsPsychPipe !== 'undefined')
+                         && !ESTE_TEST_LOCAL
+                         && DATAPIPE_EXPERIMENT_ID !== 'XXXXXXXXXXXX';
+
+/* ============================================================================
+   CONSTRUCȚIA LISTEI DE STIMULI EXPERIMENTALI
+   ============================================================================ */
+
+function construiesteListaStimuli(focalCue) {
+  // Echivalent cu construieste_lista_stimuli din Python
+  let pmPool;
+  if (focalCue) {
+    pmPool = shuffle(PM_CUES_ANIMALE);
+  } else {
+    pmPool = shuffle(PM_CUES_M);
+  }
+
+  // Calculează pozițiile celor 15 indicii PM
+  const pozitiiPm = [];
+  let pozCurenta = randInt(5, 15);
+  for (let i = 0; i < 15; i++) {
+    if (i > 0) {
+      pozCurenta += randInt(10, 25);
+    }
+    pozitiiPm.push(pozCurenta);
+  }
+
+  const maxPos = Math.max(...pozitiiPm);
+  let totalStimuli = maxPos + randInt(5, 15);
+  totalStimuli = Math.max(totalStimuli, 280);
+
+  // Construiește pool-ul de stimuli non-PM
+  const repetVIU = [];
+  const repetNEV = [];
+  for (let i = 0; i < 4; i++) {
+    repetVIU.push(...VIU_NON_ANIMALE);
+    repetNEV.push(...NEVIU);
+  }
+  const poolViu = repetVIU.slice(0, totalStimuli);
+  const poolNeviu = repetNEV.slice(0, totalStimuli);
+  const poolNonPm = shuffle([...poolViu, ...poolNeviu]);
+
+  // Construiește lista finală
+  const lista = [];
+  let idxNonPm = 0;
+  const setVIU = new Set(VIU_NON_ANIMALE);
+
+  for (let pozitie = 0; pozitie < totalStimuli; pozitie++) {
+    if (pozitiiPm.includes(pozitie)) {
+      const idxCue = pozitiiPm.indexOf(pozitie);
+      const cuvantPm = pmPool[idxCue];
+
+      if (focalCue) {
+        // Animal → viu
+        lista.push({
+          cuvant: cuvantPm,
+          categorie: 'viu',
+          este_pm_cue: true,
+          raspuns_corect_ongoing: 'v',
+          tip_afisare: 'normal'
+        });
+      } else {
+        // Cuvânt cu M
+        const categorieM = PM_CUES_M_CATEGORIE[cuvantPm];
+        lista.push({
+          cuvant: cuvantPm,
+          categorie: categorieM,
+          este_pm_cue: true,
+          raspuns_corect_ongoing: categorieM === 'viu' ? 'v' : 'n',
+          tip_afisare: 'normal'
+        });
+      }
+    } else {
+      if (idxNonPm < poolNonPm.length) {
+        const cuvant = poolNonPm[idxNonPm];
+        idxNonPm++;
+        const categorie = setVIU.has(cuvant) ? 'viu' : 'neviu';
+        lista.push({
+          cuvant: cuvant,
+          categorie: categorie,
+          este_pm_cue: false,
+          raspuns_corect_ongoing: categorie === 'viu' ? 'v' : 'n',
+          tip_afisare: 'normal'
+        });
+      }
+    }
+  }
+
+  return lista.slice(0, 280);
+}
+
+/* ============================================================================
+   GENEREAZĂ LISTA DE ANTRENAMENT (20 stimuli)
+   ============================================================================ */
+
+function construiesteAntrenament() {
+  const lista = [];
+  for (let i = 0; i < 10; i++) {
+    lista.push({
+      cuvant: randChoice(VIU_NON_ANIMALE),
+      categorie: 'viu',
+      este_pm_cue: false,
+      raspuns_corect_ongoing: 'v',
+      tip_afisare: 'normal'
+    });
+    lista.push({
+      cuvant: randChoice(NEVIU),
+      categorie: 'neviu',
+      este_pm_cue: false,
+      raspuns_corect_ongoing: 'n',
+      tip_afisare: 'normal'
+    });
+  }
+  return shuffle(lista);
+}
+
+/* ============================================================================
+   TEXTE - INSTRUCȚIUNI ȘI CONSIMȚĂMÂNT
+   ============================================================================ */
+
+const CONSIMTAMANT_PAG1 = `FORMULAR DE CONSIMȚĂMÂNT INFORMAT
+════════════════════════════════════════════════════════
+
+Titlul studiului:
+  Studiu despre memorie
+
+Autorul cercetării:
+  Ana Barbu, studentă anul III licență
+  Facultatea de Științe Socio-Umane, Departamentul Psihologie
+  Universitatea din Oradea
+
+────────────────────────────────────────────────────────
+SCOPUL STUDIULUI
+
+Acest studiu investighează aspecte ale memoriei.
+Datele colectate vor fi utilizate exclusiv în scopul
+elaborării lucrării de licență a autorului.
+
+────────────────────────────────────────────────────────`;
+
+const CONSIMTAMANT_PAG2 = `FORMULAR DE CONSIMȚĂMÂNT INFORMAT  (2/3)
+════════════════════════════════════════════════════════
+
+CE PRESUPUNE PARTICIPAREA TA
+
+• Vei vedea cuvinte pe ecran și vei apăsa taste
+  conform instrucțiunilor (aprox. 15–20 minute).
+
+────────────────────────────────────────────────────────
+CONFIDENȚIALITATE ȘI ANONIMAT
+
+• Participarea este COMPLET ANONIMĂ.
+  Nu ți se solicită numele sau alte date de identificare.
+• Datele sunt colectate prin intermediul unui cod
+  (ID participant) introdus de tine la început.
+• Datele brute nu vor fi împărtășite cu terți și nu vor fi
+  folosite în alte scopuri decât cele menționate mai sus.
+• Rezultatele studiului pot fi prezentate în formă agregată
+  (statistici de grup), niciodată la nivel individual.
+
+────────────────────────────────────────────────────────
+DREPTURILE TALE
+
+• Participarea este VOLUNTARĂ.
+  Poți întrerupe experimentul oricând închizând fereastra,
+  fără nicio consecință.
+• Ai dreptul să refuzi participarea fără a oferi explicații.
+
+────────────────────────────────────────────────────────`;
+
+const CONSIMTAMANT_ACORD = `FORMULAR DE CONSIMȚĂMÂNT INFORMAT  (3/3)
+════════════════════════════════════════════════════════
+
+DECLARAȚIE DE CONSIMȚĂMÂNT
+
+Apăsând butonul "ACCEPT și CONTINUI" confirmi că:
+
+  ✔  Ai citit și înțeles informațiile de mai sus.
+  ✔  Ești de acord să participi voluntar la acest studiu.
+  ✔  Ești de acord cu utilizarea datelor anonime
+     în scopul elaborării lucrării de licență.
+
+════════════════════════════════════════════════════════`;
+
+const INSTRUCTIUNI_BINE_VENIT = `Bine ai venit la acest experiment despre memorie!
+
+Apasă [SPAȚIU] pentru a continua.`;
+
+const INSTRUCTIUNI_INTRO = `Vei vedea cuvinte afișate pe ecran, unul câte unul.
+Sarcina ta principală este să indici cât mai rapid și corect
+la ce categorie aparține fiecare cuvânt:
+
+  Apasă  [V]  dacă cuvântul reprezintă ceva VIU
+              (animale, plante, oameni)
+
+  Apasă  [N]  dacă cuvântul reprezintă ceva NEVIU
+              (obiecte, locuri, lucruri)
+
+Vei primi și o sarcină suplimentară explicată ulterior,
+care necesită apăsarea tastei [Z] în anumite situații.
+
+Apasă [SPAȚIU] pentru a continua.`;
+
+// Instrucțiuni suplimentare afișate DOAR în condiția high-load
+const INSTRUCTIUNI_DEADLINE = `⚠  Atenție: constrângere de timp
+
+În acest experiment, fiecare cuvânt este afișat pentru
+maximum ${DEADLINE_MS} milisecunde (puțin peste 1 secundă).
+
+Trebuie să apeși [V] sau [N] ÎNAINTE ca cuvântul să dispară.
+
+Dacă nu răspunzi la timp, cuvântul dispare și nu se
+înregistrează niciun răspuns — ca și cum ai fi greșit.
+
+╔═══════════════════════════════════════════════════════╗
+║  Răspunde rapid, dar fii atent/ă la corectitudine.   ║
+║  Viteza și acuratețea sunt ambele importante.         ║
+╚═══════════════════════════════════════════════════════╝
+
+Vei exersa asta în antrenament înainte de blocul principal.
+
+Apasă [SPAȚIU] pentru a continua.`;
+
+const INSTRUCTIUNI_ANTRENAMENT = `Acum urmează un bloc de ANTRENAMENT de 20 de cuvinte
+pentru a te familiariza cu sarcina.
+
+Răspunsuri:
+  [V] = VIU     [N] = NEVIU
+
+Apasă [SPAȚIU] pentru a începe antrenamentul.`;
+
+// Instrucțiunile pentru blocul principal variază în funcție de condiție
+function getInstructiuniBlocPrincipal() {
+  const bazice = `Excelent! Antrenamentul s-a încheiat.
+
+Acum urmează blocul PRINCIPAL al experimentului.
+Aceleași reguli se aplică.
+
+Ține minte:
+  [V] = VIU
+  [N] = NEVIU
+  [Z] = indiciul special (în loc de V sau N)`;
+
+  if (HIGH_LOAD) {
+    return bazice + `
+
+⚠  Fiecare cuvânt dispare după ${DEADLINE_MS}ms — răspunde rapid.
+
+Apasă [SPAȚIU] pentru a începe.`;
+  } else {
+    return bazice + `
+
+Ai ${LOWLOAD_MS}ms per cuvânt — răspunde corect.
+
+Apasă [SPAȚIU] pentru a începe.`;
+  }
+}
+
+const MULTUMIRI = `Experimentul s-a încheiat.
+
+Îți mulțumim pentru participare!
+
+În cadrul acestui studiu am investigat memoria prospectivă -
+capacitatea de a ne aminti să executăm o intenție în viitor.
+
+Ai avut și o sarcină suplimentară de a apăsa tasta Z
+la apariția unui anumit tip de stimul.
+
+Dacă ai întrebări, poți contacta experimentatorul.
+
+(Datele au fost salvate. Poți închide fereastra.)`;
+
+function getInstructiuniPm(focal) {
+  if (focal) {
+    return `Sarcină suplimentară
+
+Pe parcursul sarcinii, vei întâlni uneori cuvinte care
+reprezintă ANIMALE (urs, vulpe, delfin, tigru etc.)
+
+Ori de câte ori apare un cuvânt care este un ANIMAL,
+apasă tasta [Z] în loc de [V] sau [N].
+
+╔═══════════════════════════════════════════════════════╗
+║  Cum răspunzi:                                        ║
+║                                                       ║
+║  Animal      →  apasă doar [Z]                        ║
+║  Orice altceva →  apasă [V] sau [N] ca de obicei      ║
+╚═══════════════════════════════════════════════════════╝
+
+Apasă [SPAȚIU] pentru a continua.`;
+  } else {
+    return `Sarcină suplimentară
+
+Pe parcursul sarcinii, vei întâlni uneori cuvinte care
+încep cu litera M (ex.: masă, molid, medalion, mango).
+
+Ori de câte ori apare un cuvânt care ÎNCEPE CU LITERA M,
+apasă tasta [Z] în loc de [V] sau [N].
+
+╔═══════════════════════════════════════════════════════╗
+║  Cum răspunzi:                                        ║
+║                                                       ║
+║  Cuvânt cu M   →  apasă doar [Z]                      ║
+║  Orice altceva →  apasă [V] sau [N] ca de obicei      ║
+╚═══════════════════════════════════════════════════════╝
+
+Apasă [SPAȚIU] pentru a continua.`;
+  }
+}
+
+
+
+
+/* ============================================================================
+   COLECTOARE DE DATE - format identic cu varianta Python
+   ============================================================================ */
+
+// Vom acumula datele pe parcurs și le vom exporta la final ca CSV
+const date_pm = [];   // pentru fișierul principal
+
+// Variabile globale completate pe parcurs
+let PARTICIPANT_ID = '';
+let TIMESTAMP = '';
+let lista_experimentala = [];
+let lista_antrenament = [];
+
+/* ============================================================================
+   INIȚIALIZARE jsPsych
+   ============================================================================ */
+
+const jsPsych = initJsPsych({
+  display_element: document.body,
+  on_finish: function() {
+    // Acest callback se apelează la sfârșit; salvarea efectivă se face mai jos
+  }
+});
+
+/* ============================================================================
+   TIMELINE - construire experiment pas cu pas
+   ============================================================================ */
+
+const timeline = [];
+
+// --- Preload (nu avem imagini, doar inițializare) ---
+timeline.push({
+  type: jsPsychPreload,
+  auto_preload: false,
+  show_progress_bar: false
+});
+
+// === TEST DE TASTATURĂ — verifică că V și N funcționează cu jsPsych ===
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div style="font-size:24px;color:black;text-align:center;line-height:1.6;">
+    <h2 style="color:#1f4e79;">Test rapid de tastatură</h2>
+    <p>Înainte să începem, te rog să apeși tasta <b style="color:#2e7d32;font-size:36px;">V</b> acum.</p>
+    <p style="font-size:14px;color:gray;margin-top:30px;">Dacă acest pas nu reacționează când apeși V,<br>înseamnă că tastatura nu trimite tasta la pagină.<br>Click pe această fereastră întâi, apoi apasă V.</p>
+  </div>`,
+  choices: ['v', 'V']
+});
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div style="font-size:24px;color:black;text-align:center;line-height:1.6;">
+    <p style="color:#2e7d32;">✓ V funcționează!</p>
+    <p>Acum apasă tasta <b style="color:#2e7d32;font-size:36px;">N</b>.</p>
+  </div>`,
+  choices: ['n', 'N']
+});
+
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div style="font-size:24px;color:black;text-align:center;line-height:1.6;">
+    <p style="color:#2e7d32;">✓ Excelent! Tastatura funcționează corect.</p>
+    <p>Apasă <b>[SPAȚIU]</b> pentru a începe experimentul.</p>
+  </div>`,
+  choices: [' ']
+});
+
+// --- DataPipe nu are nevoie de inițializare (spre deosebire de Pavlovia) ---
+// Datele se trimit la final, în trial-ul dedicat de mai jos.
+
+// --- Fullscreen (recomandat pentru focalizare) ---
+// Sărim la testare locală pentru că poate da probleme cu file://
+if (!ESTE_TEST_LOCAL) {
+  timeline.push({
+    type: jsPsychFullscreen,
+    fullscreen_mode: true,
+    message: '<p style="font-size:22px;color:black;">Experimentul va rula în modul ecran complet.<br><br>Apasă butonul de mai jos pentru a începe.</p>',
+    button_label: 'Continuă'
+  });
+}
+
+// --- ID participant ---
+timeline.push({
+  type: jsPsychSurveyHtmlForm,
+  preamble: `<div style="text-align:left;max-width:700px;margin:0 auto;color:black;font-size:18px;line-height:1.6;">
+    <h2 style="text-align:center;">Cod participant</h2>
+    <p>Pentru a putea identifica datele tale (în mod anonim), te rugăm
+    să introduci un cod format din:</p>
+    <ul>
+      <li><b>Inițialele tale</b> (prenume + nume), de ex. <i>AB</i></li>
+      <li><b>Ziua nașterii</b> (2 cifre), de ex. <i>15</i></li>
+      <li><b>Luna nașterii</b> (2 cifre), de ex. <i>07</i></li>
+    </ul>
+    <p>Exemplu: dacă te numești <i>Ana Barbu</i> și te-ai născut pe <i>19 noiembrie</i>,
+    codul tău este <b>AB1911</b>.</p>
+    <p>Acest cod nu poate fi folosit pentru a te identifica și nu va fi
+    împărtășit cu nimeni.</p>
+  </div>`,
+  html: `<div style="margin:30px auto;text-align:center;">
+    <label style="font-size:20px;color:black;">Cod participant: </label>
+    <input type="text" id="pid" name="pid" required minlength="3" maxlength="20"
+           style="font-size:24px;padding:10px;width:200px;text-transform:uppercase;"
+           pattern="[A-Za-z0-9]+" title="Doar litere și cifre">
+  </div>`,
+  button_label: 'Continuă',
+  on_finish: function(data) {
+    PARTICIPANT_ID = (data.response.pid || '').toUpperCase().trim();
+    if (!PARTICIPANT_ID) PARTICIPANT_ID = 'ANON_' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    // Generează timestamp în format identic cu Python: YYYYMMDD_HHMMSS
+    const now = new Date();
+    const pad = n => n.toString().padStart(2, '0');
+    TIMESTAMP = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  }
+});
+
+// --- Consimțământ informat (3 pagini) ---
+timeline.push({
+  type: jsPsychInstructions,
+  pages: [
+    `<div class="consimtamant">${CONSIMTAMANT_PAG1}</div>
+     <p style="text-align:center;color:black;margin-top:30px;">Apasă butonul de mai jos pentru pagina următoare.</p>`,
+    `<div class="consimtamant">${CONSIMTAMANT_PAG2}</div>
+     <p style="text-align:center;color:black;margin-top:30px;">Apasă butonul de mai jos pentru a trece la acordul de participare.</p>`
+  ],
+  show_clickable_nav: true,
+  button_label_next: 'Continuă',
+  button_label_previous: 'Înapoi',
+  allow_backward: true
+});
+
+// --- Pagina de acord (Y / N pentru consimțământ) ---
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: `<div class="consimtamant">${CONSIMTAMANT_ACORD}</div>`,
+  choices: ['ACCEPT și CONTINUI', 'REFUZ și ies din experiment'],
+  button_html: [
+    '<button class="jspsych-btn" style="background-color:#2e7d32;color:white;font-size:18px;padding:15px 25px;margin:10px;">%choice%</button>',
+    '<button class="jspsych-btn" style="background-color:#c62828;color:white;font-size:18px;padding:15px 25px;margin:10px;">%choice%</button>'
+  ],
+  on_finish: function(data) {
+    if (data.response === 1) {
+      // Refuz - oprește experimentul
+      jsPsych.endExperiment('Ai refuzat participarea. Mulțumim! Poți închide fereastra.');
+    }
+  }
+});
+
+// --- Ecran bun venit ---
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instructiuni">${INSTRUCTIUNI_BINE_VENIT}</div>`,
+  choices: [' ']
+});
+
+
+/* ============================================================================
+   BLOCUL PRINCIPAL - SARCINA PM (categorizare V/N + indiciu Z)
+   ============================================================================ */
+
+/* ============================================================================
+   FUNCȚIE HELPER - calculează rezultatele și salvează în date_pm
+   ============================================================================ */
+function salveazaRezultatPM(stimulInfo, esteAntrenament, prima_tasta, prima_rt, a_doua_tasta, a_doua_rt) {
+  // Combină prima + a doua tastă pentru a determina raspuns_ongoing și raspuns_pm
+  let raspuns_ongoing = null;
+  let timp_reactie    = null;
+  let raspuns_pm      = false;
+
+  // Procesare prima tastă
+  if (prima_tasta === 'v' || prima_tasta === 'n') {
+    raspuns_ongoing = prima_tasta;
+    timp_reactie    = prima_rt;
+  } else if (prima_tasta === 'z') {
+    raspuns_pm = true;
+  }
+  // Procesare a doua tastă (dacă există)
+  if (a_doua_tasta) {
+    if ((a_doua_tasta === 'v' || a_doua_tasta === 'n') && raspuns_ongoing === null) {
+      raspuns_ongoing = a_doua_tasta;
+      timp_reactie    = (prima_rt || 0) + (a_doua_rt || 0);
+    }
+    if (a_doua_tasta === 'z') {
+      raspuns_pm = true;
+    }
+  }
+
+  const corect_ongoing = (raspuns_ongoing === stimulInfo.raspuns_corect_ongoing);
+  let corect_pm, tip_pm;
+  if (stimulInfo.este_pm_cue) {
+    corect_pm = raspuns_pm;
+    tip_pm = raspuns_pm ? 'hit' : 'miss';
+  } else {
+    corect_pm = !raspuns_pm;
+    tip_pm = raspuns_pm ? 'false_alarm' : 'correct_rejection';
+  }
+
+  const row = {
+    participant_id:         PARTICIPANT_ID,
+    conditie:               CONDITIE_STR,
+    focal_cue:              FOCAL_CUE ? 'True' : 'False',
+    cognitive_load:         HIGH_LOAD ? 'True' : 'False',
+    cuvant:                 stimulInfo.cuvant,
+    categorie:              stimulInfo.categorie,
+    este_pm_cue:            stimulInfo.este_pm_cue ? 'True' : 'False',
+    tip_afisare:            stimulInfo.tip_afisare,
+    raspuns_ongoing:        raspuns_ongoing || '',
+    raspuns_corect_ongoing: stimulInfo.raspuns_corect_ongoing,
+    corect_ongoing:         corect_ongoing ? 'True' : 'False',
+    timp_reactie_ms:        timp_reactie !== null ? timp_reactie.toFixed(2) : '',
+    raspuns_pm:             raspuns_pm ? 'True' : 'False',
+    corect_pm:              corect_pm ? 'True' : 'False',
+    tip_pm:                 tip_pm,
+    este_antrenament:       esteAntrenament ? 'True' : 'False'
+  };
+
+  date_pm.push(row);
+  console.log(`[TRIAL] cuvant="${stimulInfo.cuvant}" | așteptat=${stimulInfo.raspuns_corect_ongoing} | tasta1=${prima_tasta||'(-)'} | tasta2=${a_doua_tasta||'(-)'} | ongoing=${raspuns_ongoing||'(-)'} | pm=${raspuns_pm} | corect_ong=${corect_ongoing}`);
+
+  return row;
+}
+
+/* ============================================================================
+   CONSTRUIEȘTE TRIAL PM - un singur trial per cuvânt (Z-only PM response)
+   - Participant apasă V sau N pentru sarcina ongoing
+   - Participant apasă Z când vede indiciul PM (fără V/N obligatoriu)
+   - Structura e identică pentru antrenament și bloc principal
+   ============================================================================ */
+function construiesteTrialPM(stimulInfo, esteAntrenament) {
+  const trialuri = [];
+
+  // Fixație 300ms
+  trialuri.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: '<div class="fixatie">+</div>',
+    choices: 'NO_KEYS',
+    trial_duration: 300
+  });
+
+  // Trial unic: acceptă V, N sau Z
+  trialuri.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div class="stim-cuvant">${stimulInfo.cuvant}</div>`,
+    choices: ['v', 'V', 'n', 'N', 'z', 'Z'],
+    response_ends_trial: true,
+    trial_duration: TRIAL_DURATION,
+    allow_held_key: true,
+    on_finish: function(data) {
+      const tasta = (data.response || '').toLowerCase();
+      const row = salveazaRezultatPM(stimulInfo, esteAntrenament, tasta, data.rt, null, null);
+      data.csv_row = 'PM';
+      for (const k in row) data[k] = row[k];
+      document.title = `[DBG] "${stimulInfo.cuvant}" | apăsat="${tasta||'NIMIC'}" | pm_cue=${stimulInfo.este_pm_cue} | tip=${row.tip_pm}`;
+    }
+  });
+
+  // Feedback antrenament (nu apare în blocul principal)
+  if (esteAntrenament) {
+    trialuri.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        const ultim = date_pm[date_pm.length - 1];
+        if (!ultim.raspuns_ongoing || ultim.raspuns_ongoing === '') {
+          return '<div class="feedback-incorect">PREA TÂRZIU!<br><span style="font-size:26px;">Răspunde mai rapid.</span></div>';
+        } else if (ultim.corect_ongoing === 'True') {
+          return '<div class="feedback-corect">Răspuns CORECT ✓</div>';
+        } else {
+          return '<div class="feedback-incorect">Răspuns GREȘIT ✗</div>';
+        }
+      },
+      choices: 'NO_KEYS',
+      trial_duration: 600,
+      conditional_function: function() {
+        return date_pm.length > 0;
+      }
+    });
+  }
+
+  // ISI 300ms
+  trialuri.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: '',
+    choices: 'NO_KEYS',
+    trial_duration: 300
+  });
+
+  return { timeline: trialuri };
+}
+
+// --- Instrucțiuni ongoing task ---
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instructiuni">${INSTRUCTIUNI_INTRO}</div>`,
+  choices: [' ']
+});
+
+// --- Ecran explicit despre constrângerea de timp (apare pentru AMBELE condiții) ---
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: function() {
+    if (HIGH_LOAD) {
+      return `<div class="instructiuni">⏱  Viteză de răspuns
+
+În acest experiment, fiecare cuvânt este afișat pentru
+maximum <b>${DEADLINE_MS} milisecunde</b> (aproximativ 1,3 secunde).
+
+Dacă nu răspunzi la timp, cuvântul dispare singur
+și răspunsul nu se înregistrează.
+
+Încearcă să răspunzi cât mai <b>rapid</b> și corect posibil.
+
+Apasă [SPAȚIU] pentru a continua.</div>`;
+    } else {
+      return `<div class="instructiuni">⏱  Viteză de răspuns
+
+În acest experiment, fiecare cuvânt este afișat pentru
+maximum <b>${LOWLOAD_MS} milisecunde</b> (aproximativ 2,5 secunde).
+
+Cuvântul dispare după ce răspunzi sau după 2,5 secunde.
+Ai timp suficient — nu te grăbi inutil.
+
+Încearcă să răspunzi <b>corect</b>.
+
+Apasă [SPAȚIU] pentru a continua.</div>`;
+    }
+  },
+  choices: [' ']
+});
+
+// --- Instrucțiuni antrenament ---
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instructiuni">${INSTRUCTIUNI_ANTRENAMENT}</div>`,
+  choices: [' ']
+});
+
+// --- Construire dinamică antrenament ---
+timeline.push({
+  type: jsPsychCallFunction,
+  func: function() {
+    lista_antrenament = construiesteAntrenament();
+  }
+});
+
+// Trick: folosim un nod care expandează lista la run-time
+// (nu putem genera trial-urile înainte pentru că folosim Math.random)
+const bloc_antrenament = {
+  timeline: [],
+  on_timeline_start: function() {
+    // Adaugă dinamic
+    this.timeline = lista_antrenament.map(s => construiesteTrialPM(s, true));
+  }
+};
+// Alternativă mai sigură: construim lista la load + folosim timeline_variables
+// Dar pentru claritate, folosim funcție de generare deterministă mai jos:
+
+// Soluție mai simplă: construim antrenamentul la momentul rulării jsPsych
+// și-l adăugăm în timeline pre-built
+const antrenament_static = construiesteAntrenament();
+const trial_antrenament_arr = antrenament_static.map(s => construiesteTrialPM(s, true));
+timeline.push(...trial_antrenament_arr);
+
+// --- Instrucțiuni PM (specifice condiției) ---
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instructiuni">${getInstructiuniPm(FOCAL_CUE)}</div>`,
+  choices: [' ']
+});
+
+// --- Instrucțiuni bloc principal ---
+timeline.push({
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: `<div class="instructiuni">${getInstructiuniBlocPrincipal()}</div>`,
+  choices: [' ']
+});
+
+// --- Bloc experimental principal ---
+const lista_principal = construiesteListaStimuli(FOCAL_CUE);
+lista_experimentala = lista_principal;
+
+for (let i = 0; i < lista_principal.length; i++) {
+  timeline.push(construiesteTrialPM(lista_principal[i], false));
+
+  // Pauză la jumătate (după trial 140)
+  if (i === 139) {
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `<div class="instructiuni">Pauză scurtă.
+
+Poți lua o pauză de câteva minute.
+
+Apasă [SPAȚIU] pentru a continua experimentul.</div>`,
+      choices: [' ']
+    });
+  }
+}
+
+/* ============================================================================
+   FINALIZARE - SALVAREA DATELOR
+   ============================================================================ */
+
+// Funcție care construiește un CSV string identic cu format Python
+function dictListToCSV(lista, fieldnames) {
+  if (!lista.length) return '';
+  const escape = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    // Dacă conține virgulă, ghilimele sau newline → încadrează în ghilimele
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+  const lines = [fieldnames.join(',')];
+  for (const row of lista) {
+    lines.push(fieldnames.map(f => escape(row[f])).join(','));
+  }
+  return lines.join('\r\n') + '\r\n';
+}
+
+// Salvarea finală - se rulează după toate trial-urile
+timeline.push({
+  type: jsPsychCallFunction,
+  func: function() {
+    // Construiește CSV-urile cu format identic
+    const fieldnames_pm = [
+      'participant_id', 'conditie', 'focal_cue', 'cognitive_load',
+      'cuvant', 'categorie', 'este_pm_cue', 'tip_afisare',
+      'raspuns_ongoing', 'raspuns_corect_ongoing', 'corect_ongoing',
+      'timp_reactie_ms', 'raspuns_pm', 'corect_pm', 'tip_pm', 'este_antrenament'
+    ];
+
+    const csv_pm  = dictListToCSV(date_pm,  fieldnames_pm);
+
+    // Construiește sumar text
+    const trials_pm_real = date_pm.filter(t => t.este_pm_cue === 'True' && t.este_antrenament === 'False');
+    const hits   = trials_pm_real.filter(t => t.tip_pm === 'hit').length;
+    const misses = trials_pm_real.filter(t => t.tip_pm === 'miss').length;
+    const trials_non_pm = date_pm.filter(t => t.este_pm_cue === 'False' && t.este_antrenament === 'False');
+    const false_alarms = trials_non_pm.filter(t => t.raspuns_pm === 'True').length;
+    const ongoing_real = date_pm.filter(t => t.este_antrenament === 'False' && t.raspuns_ongoing !== '');
+    const acuratete_ongoing = ongoing_real.length ? ongoing_real.filter(t => t.corect_ongoing === 'True').length / ongoing_real.length : 0;
+    const tr_valide = date_pm.filter(t => t.este_antrenament === 'False'
+                                       && t.timp_reactie_ms !== ''
+                                       && t.corect_ongoing === 'True'
+                                       && t.este_pm_cue === 'False');
+    const tr_mediu = tr_valide.length ? tr_valide.reduce((s, t) => s + parseFloat(t.timp_reactie_ms), 0) / tr_valide.length : 0;
+    const total_cues = trials_pm_real.length;
+    const acuratete_pm = total_cues ? hits / total_cues : 0;
+
+    const sumar = `SUMAR EXPERIMENT
+========================================
+Participant: ${PARTICIPANT_ID}
+Condiție: ${CONDITIE_STR}
+Focal cue: ${FOCAL_CUE ? 'True' : 'False'}
+Cognitive load (deadline): ${HIGH_LOAD ? `True (${DEADLINE_MS}ms)` : `False (${LOWLOAD_MS}ms)`}
+
+SCORURI PM:
+  total_pm_cues: ${total_cues}
+  hits: ${hits}
+  misses: ${misses}
+  false_alarms: ${false_alarms}
+  acuratete_pm: ${acuratete_pm.toFixed(3)}
+  acuratete_ongoing: ${acuratete_ongoing.toFixed(3)}
+  timp_reactie_mediu_ms: ${tr_mediu.toFixed(2)}
+`;
+
+    // Stocăm fișierele "brute" ca text pentru download local backup
+    window.__csv_pm = csv_pm;
+    window.__sumar = sumar;
+    window.__participant_id = PARTICIPANT_ID;
+    window.__conditie = CONDITIE_STR;
+    window.__timestamp = TIMESTAMP;
+
+    // Funcție de descărcare locală (backup)
+    function downloadCSV(content, filename) {
+      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    window.__downloadAllData = function() {
+      const base = `data_P${PARTICIPANT_ID}_${CONDITIE_STR}_${TIMESTAMP}`;
+      downloadCSV(csv_pm,  base + '.csv');
+      downloadCSV(sumar,   base + '_sumar.txt');
+    };
+  }
+});
+
+// --- Salvează pe OSF prin DataPipe (trimite ambele CSV-uri) ---
+// Se rulează doar dacă suntem online ȘI ID-ul DataPipe a fost configurat
+if (DATAPIPE_DISPONIBIL) {
+  // Mesaj de încărcare în timp ce datele se trimit
+  timeline.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: `<div class="instructiuni">Se salvează datele... te rugăm să aștepți câteva secunde.</div>`,
+    choices: 'NO_KEYS',
+    trial_duration: 100  // doar 100ms - apare scurt înainte de upload
+  });
+
+  // Salvare CSV principal (PM - 280 trial-uri)
+  timeline.push({
+    type: jsPsychPipe,
+    action: 'save',
+    experiment_id: DATAPIPE_EXPERIMENT_ID,
+    filename: function() {
+      return `data_P${PARTICIPANT_ID}_${CONDITIE_STR}_${TIMESTAMP}.csv`;
+    },
+    data_string: function() { return window.__csv_pm || ''; }
+  });
+
+  // Salvare fișier sumar (text cu scoruri agregate)
+  timeline.push({
+    type: jsPsychPipe,
+    action: 'save',
+    experiment_id: DATAPIPE_EXPERIMENT_ID,
+    filename: function() {
+      return `data_P${PARTICIPANT_ID}_${CONDITIE_STR}_${TIMESTAMP}_sumar.txt`;
+    },
+    data_string: function() { return window.__sumar || ''; }
+  });
+}
+
+// --- Mulțumiri + buton de backup pentru download local ---
+timeline.push({
+  type: jsPsychHtmlButtonResponse,
+  stimulus: function() {
+    let extra = '';
+    if (ESTE_TEST_LOCAL) {
+      extra = `<p style="text-align:center;color:#c00000;margin-top:30px;font-size:16px;">
+        ⚠️ Testare locală detectată - datele NU s-au salvat pe server.<br>
+        Apasă butonul de mai jos pentru a descărca CSV-urile local.
+      </p>`;
+    } else if (!DATAPIPE_DISPONIBIL) {
+      extra = `<p style="text-align:center;color:#c00000;margin-top:30px;font-size:16px;">
+        ⚠️ DataPipe nu e configurat - datele NU s-au salvat pe server.<br>
+        Apasă butonul pentru descărcare locală și trimite fișierele experimentatorului.
+      </p>`;
+    } else {
+      extra = `<p style="text-align:center;color:#2e7d32;margin-top:30px;font-size:14px;">
+        ✓ Datele au fost salvate cu succes.
+      </p>`;
+    }
+    return `<div class="instructiuni">${MULTUMIRI}</div>` + extra;
+  },
+  choices: ['Închide experimentul', 'Descarcă datele local (opțional)'],
+  on_finish: function(data) {
+    // Dacă suntem local sau DataPipe nu e configurat, descărcăm automat
+    if ((ESTE_TEST_LOCAL || !DATAPIPE_DISPONIBIL) && window.__downloadAllData) {
+      window.__downloadAllData();
+    } else if (data.response === 1 && window.__downloadAllData) {
+      window.__downloadAllData();
+    }
+  }
+});
+
+// --- Ieși din fullscreen ---
+if (!ESTE_TEST_LOCAL) {
+  timeline.push({
+    type: jsPsychFullscreen,
+    fullscreen_mode: false
+  });
+}
+
+/* ============================================================================
+   PORNEȘTE EXPERIMENTUL
+   ============================================================================ */
+jsPsych.run(timeline);
+
+</script>
+</body>
+</html>
