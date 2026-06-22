@@ -240,11 +240,15 @@ function randChoice(arr) {
 function determinaConditie() {
   const params = new URLSearchParams(window.location.search);
   const condParam = params.get('cond');
-  if (condParam && ['1', '2', '3', '4'].includes(condParam)) {
+  // Override din URL: doar grupurile 1-3 sunt permise. Grupul 4 e blocat.
+  if (condParam && ['1', '2', '3'].includes(condParam)) {
     return parseInt(condParam);
   }
-  // Random pur (1-4)
-  return randInt(1, 4);
+  // Random ponderat: prioritate grupului cel mai gol.
+  // Grupul 1 (focal-highload) are cea mai mare nevoie -> apare cel mai des.
+  // Grupul 4 (nonfocal-lowload) e EXCLUS complet.
+  const pool = [1, 1, 1, 1, 3, 3, 3, 2, 2];
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 const CONDITII_DICT = {
